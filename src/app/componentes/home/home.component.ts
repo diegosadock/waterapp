@@ -35,9 +35,10 @@ ngOnInit() {
     this.carregarTema();
     this.carregarHistorico();
 
+    // Verifica se está configurado e notificações ativadas
     if (this.configurado && this.notificacaoAtiva) {
       this.iniciarLembretes();
-      this.enviarIntervaloAoSW();  // envia o intervalo correto aqui
+      this.enviarIntervaloAoSW(); // Isso manda o intervalo atualizado pro SW
     }
 
     if ('Notification' in window && Notification.permission !== 'granted') {
@@ -55,8 +56,14 @@ ngOnInit() {
       this.intervaloMinutos = 60;
       this.salvarLocalStorage();
     }
+
+    // **Aqui garante que sempre envia a mensagem ao SW se notificações ativadas**
+    if (this.notificacaoAtiva) {
+      this.enviarIntervaloAoSW();
+    }
   }
 }
+
 
 
   configurarMeta() {
