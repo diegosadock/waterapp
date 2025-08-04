@@ -35,10 +35,26 @@ ngOnInit() {
     this.carregarTema();
     this.carregarHistorico();
 
-    // Verifica se está configurado e notificações ativadas
+    // Garante que o SW seja avisado que a aba foi aberta
+    this.enviarMensagemSW({ type: 'ABA_ABERTA' });
+
+    // Detecta quando a aba é ocultada ou visível
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.enviarMensagemSW({ type: 'ABA_ABERTA' });
+      } else if (document.visibilityState === 'hidden') {
+        this.enviarMensagemSW({ type: 'ABA_FECHADA' });
+      }
+    });
+
+    // Detecta quando a aba é fechada ou recarregada
+    window.addEventListener('beforeunload', () => {
+      this.enviarMensagemSW({ type: 'ABA_FECHADA' });
+    });
+
     if (this.configurado && this.notificacaoAtiva) {
       this.iniciarLembretes();
-      this.enviarIntervaloAoSW(); // Isso manda o intervalo atualizado pro SW
+      this.enviarIntervaloAoSW();
     }
 
     if ('Notification' in window && Notification.permission !== 'granted') {
@@ -57,14 +73,11 @@ ngOnInit() {
       this.salvarLocalStorage();
     }
 
-    // **Aqui garante que sempre envia a mensagem ao SW se notificações ativadas**
     if (this.notificacaoAtiva) {
       this.enviarIntervaloAoSW();
     }
   }
 }
-
-
 
   configurarMeta() {
     this.metaDiaria = this.aguaService.calcularMeta(this.peso, this.idade, this.atividade);
@@ -286,5 +299,18 @@ ngOnInit() {
   get porcentagem(): number {
     return (this.quantidadeBebida / this.metaDiaria) * 100;
   }
+
+  private enviarMensagemSW(mensagem: any) {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage(mensagem);
+  } else {
+    navigator.serviceWorker.ready.then(reg => {
+      if (reg.active) {
+        reg.active.postMessage(mensagem);
+      }
+    });
+  }
+}
+
 
 }
