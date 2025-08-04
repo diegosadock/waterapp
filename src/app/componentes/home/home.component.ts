@@ -26,58 +26,56 @@ export class HomeComponent implements OnInit {
   ultimaData = new Date().toDateString();
   historico: Historico[] = [];
   temaEscuro = false;
+   private lembreteIntervalId: any = null;
 
   constructor(private aguaService: AguaService, @Inject(PLATFORM_ID) private platformId: Object) { }
 
 ngOnInit() {
-  if (isPlatformBrowser(this.platformId)) {
-    this.carregarLocalStorage();
-    this.carregarTema();
-    this.carregarHistorico();
+    if (isPlatformBrowser(this.platformId)) {
+      this.carregarLocalStorage();
+      this.carregarTema();
+      this.carregarHistorico();
 
-    // Garante que o SW seja avisado que a aba foi aberta
-    this.enviarMensagemSW({ type: 'ABA_ABERTA' });
+      // Garante que o SW seja avisado que a aba foi aberta
+      this.enviarMensagemSW({ type: 'ABA_ABERTA' });
 
-    // Detecta quando a aba é ocultada ou visível
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        this.enviarMensagemSW({ type: 'ABA_ABERTA' });
-      } else if (document.visibilityState === 'hidden') {
-        this.enviarMensagemSW({ type: 'ABA_FECHADA' });
-      }
-    });
-
-    // Detecta quando a aba é fechada ou recarregada
-    window.addEventListener('beforeunload', () => {
-      this.enviarMensagemSW({ type: 'ABA_FECHADA' });
-    });
-
-    if (this.configurado && this.notificacaoAtiva) {
-      this.iniciarLembretes();
-      this.enviarIntervaloAoSW();
-    }
-
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          this.notificacaoAtiva = true;
-          this.salvarLocalStorage();
-          this.iniciarLembretes();
-          this.enviarIntervaloAoSW();
+      // Detecta quando a aba é ocultada ou visível
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.enviarMensagemSW({ type: 'ABA_ABERTA' });
+        } else if (document.visibilityState === 'hidden') {
+          this.enviarMensagemSW({ type: 'ABA_FECHADA' });
         }
       });
-    }
 
-    if (!this.intervaloMinutos || this.intervaloMinutos <= 0) {
-      this.intervaloMinutos = 60;
-      this.salvarLocalStorage();
-    }
+      // Detecta quando a aba é fechada ou recarregada
+      window.addEventListener('beforeunload', () => {
+        this.enviarMensagemSW({ type: 'ABA_FECHADA' });
+      });
 
-    if (this.notificacaoAtiva) {
-      this.enviarIntervaloAoSW();
+      // Se configurado e notificações ativadas, inicia os lembretes (timer)
+      if (this.configurado && this.notificacaoAtiva) {
+        this.iniciarLembretes();
+      }
+
+      // Solicita permissão para notificações, se necessário
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            this.notificacaoAtiva = true;
+            this.salvarLocalStorage();
+            this.iniciarLembretes();
+          }
+        });
+      }
+
+      // Ajuste para intervalo padrão
+      if (!this.intervaloMinutos || this.intervaloMinutos <= 0) {
+        this.intervaloMinutos = 60;
+        this.salvarLocalStorage();
+      }
     }
   }
-}
 
   configurarMeta() {
     this.metaDiaria = this.aguaService.calcularMeta(this.peso, this.idade, this.atividade);
@@ -96,22 +94,37 @@ ngOnInit() {
   }
 
   iniciarLembretes() {
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({
-      type: 'SET_INTERVAL',
-      minutes: Number(this.intervaloMinutos)
-    });
-  } else {
-    navigator.serviceWorker.ready.then(registration => {
-      if (registration.active) {
-        registration.active.postMessage({
-          type: 'SET_INTERVAL',
-          minutes: Number(this.intervaloMinutos)
-        });
-      }
-    });
+  if (!isPlatformBrowser(this.platformId)) return;
+
+  const intervaloValido = Number(this.intervaloMinutos);
+  if (isNaN(intervaloValido) || intervaloValido <= 0) {
+    console.warn('⛔ Intervalo inválido, não foi possível iniciar lembretes.');
+    return;
   }
+
+  if (!('serviceWorker' in navigator)) {
+    console.warn('⛔ Service Worker não é suportado neste navegador.');
+    return;
+  }
+
+  navigator.serviceWorker.ready
+    .then(reg => {
+      const worker = reg.active;
+      if (worker) {
+        worker.postMessage({
+          type: 'SET_INTERVAL',
+          minutes: intervaloValido
+        });
+        console.log(`✅ Notificações configuradas para cada ${intervaloValido} minuto(s).`);
+      } else {
+        console.warn('⛔ Nenhum SW ativo encontrado.');
+      }
+    })
+    .catch(err => {
+      console.error('Erro ao acessar o Service Worker:', err);
+    });
 }
+
 
 
   enviarIntervaloAoSW() {
@@ -145,21 +158,20 @@ ngOnInit() {
   }
 
   cancelarLembretes() {
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'CANCELAR_LEMBRETES' });
+    if (this.lembreteIntervalId) {
+      clearInterval(this.lembreteIntervalId);
+      this.lembreteIntervalId = null;
+    }
     this.notificacaoAtiva = false;
-    this.salvarLocalStorage();  // salva no objeto aguaApp
+    this.salvarLocalStorage();
     console.log('Lembretes desativados.');
   }
-}
 
- reativarLembretes() {
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage({ type: 'REINICIAR_LEMBRETES' });
+  reativarLembretes() {
     this.notificacaoAtiva = true;
-    this.salvarLocalStorage();  // salva no objeto aguaApp
+    this.salvarLocalStorage();
+    this.iniciarLembretes();
     console.log('Lembretes reativados.');
-  }
   }
 
   resetarQuantidade() {
@@ -301,15 +313,22 @@ ngOnInit() {
   }
 
   private enviarMensagemSW(mensagem: any) {
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage(mensagem);
-  } else {
-    navigator.serviceWorker.ready.then(reg => {
-      if (reg.active) {
-        reg.active.postMessage(mensagem);
-      }
-    });
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage(mensagem);
+    } else {
+      navigator.serviceWorker.ready.then(reg => {
+        if (reg.active) {
+          reg.active.postMessage(mensagem);
+        }
+      });
+    }
   }
-}
+
+private dispararNotificacao() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION' });
+    }
+  }
+
 
 }
