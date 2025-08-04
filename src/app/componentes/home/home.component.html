@@ -1,3 +1,4 @@
+<div *ngIf="!carregandoDados">
 <div class="container mt-5 p-4 rounded shadow bg-light text-center" style="max-width: 800px;"
     [ngClass]="{'dark': temaEscuro}">
     <h2 class="text-primary mb-4 d-flex justify-content-between align-items-center">
@@ -107,8 +108,9 @@
 
             <div class="mb-3">
                 <label class="form-label">Tempo entre lembretes (minutos)</label>
-                <input type="number" class="form-control" [(ngModel)]="intervaloMinutos" name="intervaloMinutos"
+                <input type="number" class="form-control" [(ngModel)]="intervaloMinutos" name="intervaloMinutos" min="1"
                     (ngModelChange)="atualizarIntervalo($event)" />
+
             </div>
 
             <button class="btn btn-outline-secondary w-100" (click)="configurado = false">
@@ -116,4 +118,5 @@
             </button>
         </div>
     </div>
+</div>
 </div>
