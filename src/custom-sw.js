@@ -1,6 +1,6 @@
-let intervalo = null;       // Tempo entre notificações em minutos
-let lembreteTimeout = null; // Timeout das notificações
-let abasAbertas = 0;        // Contador de abas abertas
+let intervalo = null;
+let lembreteTimeout = null;
+let abasAbertas = 0;
 
 console.log('💧 Service Worker carregado e ativo');
 
@@ -8,15 +8,15 @@ self.addEventListener('message', event => {
   const data = event.data;
 
   if (data?.type === 'SET_INTERVAL') {
-  const novoIntervalo = parseFloat(data.minutes);
-  if (!isNaN(novoIntervalo) && novoIntervalo >= 1) {
-    intervalo = novoIntervalo;
-    cancelarNotificacoes();
-    iniciarNotificacoes();
-  } else {
-    console.warn('[SW] Intervalo inválido recebido:', data.minutes);
+    const novoIntervalo = parseFloat(data.minutes);
+    if (!isNaN(novoIntervalo) && novoIntervalo >= 1) {
+      intervalo = novoIntervalo;
+      cancelarNotificacoes();
+      iniciarNotificacoes();
+    } else {
+      console.warn('[SW] Intervalo inválido recebido:', data.minutes);
+    }
   }
-}
 
   if (data?.type === 'CANCELAR_LEMBRETES') {
     cancelarNotificacoes();
@@ -75,9 +75,6 @@ function iniciarNotificacoes() {
 
   agendarNotificacao();
 }
-
-
-// SW lifecycle
 
 self.addEventListener('install', event => {
   console.log('🔧 [SW] Instalando...');
