@@ -1,10 +1,7 @@
-// custom-sw.js
-
 let intervalo = null;       // Tempo entre notificações em minutos
 let lembreteTimeout = null; // Referência para cancelamento de setTimeout
 
 console.log('💧 Service Worker carregado e ativo');
-
 
 self.addEventListener('message', event => {
   const data = event.data;
@@ -58,6 +55,5 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   console.log('🚀 [SW] Ativado e pronto!');
-  self.clients.claim();
+  event.waitUntil(self.clients.claim());
 });
-

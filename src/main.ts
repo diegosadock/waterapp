@@ -1,9 +1,8 @@
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-
 import { AppModule } from './app/app.module';
 
-
-platformBrowserDynamic().bootstrapModule(AppModule)
+platformBrowserDynamic()
+  .bootstrapModule(AppModule)
   .catch(err => console.error(err));
 
 if ('Notification' in window) {
@@ -26,10 +25,24 @@ function registrarSW() {
       .then(registration => {
         console.log('Service Worker registrado:', registration);
 
+        // Detecta atualização do SW e força reload para ativar novo SW
+        registration.onupdatefound = () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            console.log('Nova versão do SW encontrada, estado:', newWorker.state);
+            newWorker.onstatechange = () => {
+              console.log('Estado do novo SW:', newWorker.state);
+              if (newWorker.state === 'activated') {
+                console.log('Novo SW ativado, recarregando a página...');
+                window.location.reload();
+              }
+            };
+          }
+        };
+
         // Tenta recuperar o intervalo do localStorage
         const aguaApp = localStorage.getItem('aguaApp');
         let intervalo = 60; // valor padrão
-
         if (aguaApp) {
           try {
             const parsed = JSON.parse(aguaApp);
@@ -56,7 +69,3 @@ function registrarSW() {
       .catch(err => console.error('Erro ao registrar SW:', err));
   }
 }
-
-
-
-
