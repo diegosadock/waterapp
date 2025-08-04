@@ -21,7 +21,7 @@ if ('Notification' in window) {
 function registrarSW() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker
-      .register('/assets/custom-sw.js')
+      .register('/custom-sw.js')
       .then(registration => {
         console.log('Service Worker registrado:', registration);
 
