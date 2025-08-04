@@ -4,60 +4,62 @@ import { AppModule } from './app/app.module';
 platformBrowserDynamic().bootstrapModule(AppModule)
   .catch(err => console.error(err));
 
-// Verifica e pede permissão para notificações
-if ('Notification' in window) {
+// Verifica suporte a SW e Notificações
+if ('serviceWorker' in navigator && 'Notification' in window) {
+  // Solicita permissão se necessário
   if (Notification.permission === 'default') {
     Notification.requestPermission().then(permission => {
       if (permission === 'granted') {
         registrarSW();
       }
     });
-  } else if (Notification.permission === 'granted') {
+  } else {
     registrarSW();
   }
 }
 
 function registrarSW() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('/custom-sw.js')
-      .then(registration => {
-        console.log('✅ Service Worker registrado:', registration);
+  navigator.serviceWorker
+    .register('/custom-sw.js')
+    .then(registration => {
+      console.log('✅ Service Worker registrado:', registration);
 
-        registration.onupdatefound = () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.onstatechange = () => {
-              if (newWorker.state === 'activated') {
-                window.location.reload();
-              }
-            };
-          }
-        };
-
-        navigator.serviceWorker.ready.then(reg => {
-          const aguaApp = localStorage.getItem('aguaApp');
-          let intervalo = 60;
-          if (aguaApp) {
-            try {
-              const parsed = JSON.parse(aguaApp);
-              if (parsed.intervaloMinutos && parsed.intervaloMinutos > 0) {
-                intervalo = parsed.intervaloMinutos;
-              }
-            } catch (e) {
-              console.warn('Erro ao ler localStorage:', e);
+      // Atualiza o SW e recarrega página se necessário
+      registration.onupdatefound = () => {
+        const newWorker = registration.installing;
+        if (newWorker) {
+          newWorker.onstatechange = () => {
+            if (newWorker.state === 'activated') {
+              console.log('🔄 Novo SW ativado. Recarregando página...');
+              window.location.reload();
             }
-          }
+          };
+        }
+      };
 
-          const mensagemIntervalo = { type: 'SET_INTERVAL', minutes: Number(intervalo) };
-          const mensagemAba = { type: 'ABA_ABERTA' };
+      navigator.serviceWorker.ready.then(reg => {
+        const aguaApp = localStorage.getItem('aguaApp');
+        let intervalo = 60;
+        let notificacaoAtiva = false;
 
-          if (reg.active) {
-            reg.active.postMessage(mensagemIntervalo);
-            reg.active.postMessage(mensagemAba);
+        if (aguaApp) {
+          try {
+            const parsed = JSON.parse(aguaApp);
+            intervalo = parsed.intervaloMinutos > 0 ? parsed.intervaloMinutos : 60;
+            notificacaoAtiva = parsed.notificacaoAtiva ?? false;
+          } catch (e) {
+            console.warn('⚠️ Erro ao ler localStorage:', e);
           }
-        });
-      })
-      .catch(err => console.error('Erro ao registrar SW:', err));
-  }
+        }
+
+        if (reg.active && notificacaoAtiva) {
+          reg.active.postMessage({ type: 'SET_INTERVAL', minutes: Number(intervalo) });
+          reg.active.postMessage({ type: 'ABA_ABERTA' });
+          console.log(`📩 Intervalo de ${intervalo} minuto(s) enviado ao SW.`);
+        } else {
+          console.log('🔕 Notificações estão desativadas ou SW inativo.');
+        }
+      });
+    })
+    .catch(err => console.error('❌ Erro ao registrar SW:', err));
 }

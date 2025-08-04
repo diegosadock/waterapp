@@ -31,51 +31,60 @@ export class HomeComponent implements OnInit {
   constructor(private aguaService: AguaService, @Inject(PLATFORM_ID) private platformId: Object) { }
 
 ngOnInit() {
-    if (isPlatformBrowser(this.platformId)) {
-      this.carregarLocalStorage();
-      this.carregarTema();
-      this.carregarHistorico();
+  if (isPlatformBrowser(this.platformId)) {
+    this.carregarLocalStorage();
+    this.carregarTema();
+    this.carregarHistorico();
 
-      // Garante que o SW seja avisado que a aba foi aberta
-      this.enviarMensagemSW({ type: 'ABA_ABERTA' });
+    // Marca que uma aba foi aberta
+    this.enviarMensagemSW({ type: 'ABA_ABERTA' });
 
-      // Detecta quando a aba é ocultada ou visível
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          this.enviarMensagemSW({ type: 'ABA_ABERTA' });
-        } else if (document.visibilityState === 'hidden') {
-          this.enviarMensagemSW({ type: 'ABA_FECHADA' });
+    // Observa visibilidade da aba
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.enviarMensagemSW({ type: 'ABA_ABERTA' });
+      } else {
+        this.enviarMensagemSW({ type: 'ABA_FECHADA' });
+      }
+    });
+
+    // Ao fechar ou recarregar a aba
+    window.addEventListener('beforeunload', () => {
+      this.enviarMensagemSW({ type: 'ABA_FECHADA' });
+    });
+
+    // Corrige intervalo inválido
+    if (!this.intervaloMinutos || this.intervaloMinutos <= 0) {
+      this.intervaloMinutos = 60;
+      this.salvarLocalStorage();
+    }
+
+    // Solicita permissão para notificação
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          this.notificacaoAtiva = true;
+          this.salvarLocalStorage();
+          this.iniciarLembretes(); // só inicia se permissão for concedida
         }
       });
+    } else if (Notification.permission === 'granted' && this.configurado && this.notificacaoAtiva) {
+      // já temos permissão, configurado e notificações ativas
+      this.iniciarLembretes();
+    }
 
-      // Detecta quando a aba é fechada ou recarregada
-      window.addEventListener('beforeunload', () => {
-        this.enviarMensagemSW({ type: 'ABA_FECHADA' });
-      });
-
-      // Se configurado e notificações ativadas, inicia os lembretes (timer)
-      if (this.configurado && this.notificacaoAtiva) {
-        this.iniciarLembretes();
-      }
-
-      // Solicita permissão para notificações, se necessário
-      if ('Notification' in window && Notification.permission !== 'granted') {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            this.notificacaoAtiva = true;
-            this.salvarLocalStorage();
-            this.iniciarLembretes();
-          }
+    // Se notificações já estavam ativas mas SW ainda não recebeu, reenviar intervalo
+    navigator.serviceWorker?.ready?.then(reg => {
+      if (this.notificacaoAtiva && reg?.active) {
+        reg.active.postMessage({
+          type: 'SET_INTERVAL',
+          minutes: this.intervaloMinutos
         });
       }
-
-      // Ajuste para intervalo padrão
-      if (!this.intervaloMinutos || this.intervaloMinutos <= 0) {
-        this.intervaloMinutos = 60;
-        this.salvarLocalStorage();
-      }
-    }
+    });
   }
+}
+
 
   configurarMeta() {
     this.metaDiaria = this.aguaService.calcularMeta(this.peso, this.idade, this.atividade);
@@ -96,34 +105,34 @@ ngOnInit() {
   iniciarLembretes() {
   if (!isPlatformBrowser(this.platformId)) return;
 
+  if (Notification.permission !== 'granted') {
+    console.warn('⛔ Notificações não autorizadas pelo usuário.');
+    return;
+  }
+
   const intervaloValido = Number(this.intervaloMinutos);
   if (isNaN(intervaloValido) || intervaloValido <= 0) {
-    console.warn('⛔ Intervalo inválido, não foi possível iniciar lembretes.');
+    console.warn('⛔ Intervalo inválido.');
     return;
   }
 
-  if (!('serviceWorker' in navigator)) {
-    console.warn('⛔ Service Worker não é suportado neste navegador.');
-    return;
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready
+      .then(reg => {
+        if (reg.active) {
+          reg.active.postMessage({
+            type: 'SET_INTERVAL',
+            minutes: intervaloValido
+          });
+          console.log(`✅ Lembretes ativados: ${intervaloValido} min`);
+        } else {
+          console.warn('⛔ Nenhum SW ativo encontrado.');
+        }
+      })
+      .catch(err => console.error('Erro ao acessar o SW:', err));
   }
-
-  navigator.serviceWorker.ready
-    .then(reg => {
-      const worker = reg.active;
-      if (worker) {
-        worker.postMessage({
-          type: 'SET_INTERVAL',
-          minutes: intervaloValido
-        });
-        console.log(`✅ Notificações configuradas para cada ${intervaloValido} minuto(s).`);
-      } else {
-        console.warn('⛔ Nenhum SW ativo encontrado.');
-      }
-    })
-    .catch(err => {
-      console.error('Erro ao acessar o Service Worker:', err);
-    });
 }
+
 
 
 
