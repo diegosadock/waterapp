@@ -99,14 +99,14 @@ ngOnInit() {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
       type: 'SET_INTERVAL',
-      minutes: this.intervaloMinutos
+      minutes: Number(this.intervaloMinutos)
     });
   } else {
     navigator.serviceWorker.ready.then(registration => {
       if (registration.active) {
         registration.active.postMessage({
           type: 'SET_INTERVAL',
-          minutes: this.intervaloMinutos
+          minutes: Number(this.intervaloMinutos)
         });
       }
     });
@@ -124,7 +124,7 @@ ngOnInit() {
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
         type: 'SET_INTERVAL',
-        minutes: intervaloValido
+        minutes: Number(intervaloValido)
       });
       console.log('Intervalo enviado ao SW:', intervaloValido);
     } else {

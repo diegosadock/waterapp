@@ -8,12 +8,15 @@ self.addEventListener('message', event => {
   const data = event.data;
 
   if (data?.type === 'SET_INTERVAL') {
-    intervalo = data.minutes;
-    if (abasAbertas > 0) {
-      cancelarNotificacoes();
-      iniciarNotificacoes();
-    }
+  const novoIntervalo = parseFloat(data.minutes);
+  if (!isNaN(novoIntervalo) && novoIntervalo >= 1) {
+    intervalo = novoIntervalo;
+    cancelarNotificacoes();
+    iniciarNotificacoes();
+  } else {
+    console.warn('[SW] Intervalo inválido recebido:', data.minutes);
   }
+}
 
   if (data?.type === 'CANCELAR_LEMBRETES') {
     cancelarNotificacoes();
@@ -55,7 +58,9 @@ function cancelarNotificacoes() {
 }
 
 function iniciarNotificacoes() {
-  if (!intervalo || intervalo <= 0) return;
+  if (!intervalo || intervalo < 1) return;
+
+  console.log('[SW] Iniciando notificações a cada', intervalo, 'minuto(s)');
 
   const agendarNotificacao = () => {
     lembreteTimeout = setTimeout(() => {
@@ -69,8 +74,8 @@ function iniciarNotificacoes() {
   };
 
   agendarNotificacao();
-  console.log('[SW] Notificações iniciadas com intervalo de', intervalo, 'minutos');
 }
+
 
 // SW lifecycle
 

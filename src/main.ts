@@ -54,7 +54,7 @@ function registrarSW() {
           }
         }
 
-        const mensagem = { type: 'SET_INTERVAL', minutes: intervalo };
+        const mensagem = { type: 'SET_INTERVAL', minutes: Number(intervalo) };
 
         if (registration.active) {
           registration.active.postMessage(mensagem);
