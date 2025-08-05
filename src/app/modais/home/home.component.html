@@ -116,6 +116,10 @@
   </div>
 </div>
 
+<div style="margin-top: 30px; text-align: center; font-size: 16px; font-weight: 500; color: #a8cfff;">
+  {{ fraseMotivacional }}
+</div>
+
 
 
 
@@ -134,17 +138,19 @@
   </div>
 
  <div
-  class="info-extras d-flex flex-wrap justify-content-between align-items-center mt-3 w-100"
+  class="info-extras d-flex flex-wrap justify-content-between align-items-center mt-3 w-100 position-relative"
   style="
     max-width: 400px;
     background: rgba(20, 40, 70, 0.75);
     border-radius: 12px;
-    padding: 18px 24px;
+    padding: 18px 24px 60px; /* espaço extra embaixo pro botão */
     font-family: 'Roboto', sans-serif;
     color: #eee;
     box-shadow: 0 0 15px rgba(13, 110, 253, 0.3);
+    margin: 0 auto;
   "
 >
+  <!-- Informações -->
   <div style="flex: 1 1 48%; margin-bottom: 10px;">
     <div style="font-weight: 500; font-size: 14px;">Última vez que bebeu</div>
     <div style="font-weight: 700; font-size: 16px; color: #3a8bfd;">
@@ -177,15 +183,27 @@
       </span>
     </div>
   </div>
-</div>
-  </main>
 
-  <!-- Botão flutuante centralizado verticalmente -->
-  <button class="btn btn-primary rounded-circle shadow-lg position-fixed"
-    style="top: 82%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; font-size: 32px; z-index: 1030;"
-    (click)="adicionarAgua(customVolumes[0])" aria-label="Adicionar água rápido" type="button">
+  <!-- Botão acoplado na parte inferior do quadrado -->
+  <button
+    class="btn btn-primary rounded-circle shadow-lg"
+    style="
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      font-size: 32px;
+      z-index: 10;
+    "
+    (click)="adicionarAgua(customVolumes[0])"
+    aria-label="Adicionar água rápido"
+    type="button"
+  >
     +
   </button>
+  
 
   <!-- BOTÕES INVISÍVEIS PARA MODAIS -->
   <button type="button" style="visibility: hidden;" class="btn btn-primary" data-bs-toggle="modal"
