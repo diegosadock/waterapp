@@ -1,0 +1,17 @@
+.dark {
+  background-color: #121212 !important;
+  color: #f0f0f0;
+}
+
+.dark .modal-content {
+  background-color: #1e1e1e;
+  color: white;
+}
+
+.dark .table {
+  color: #fff;
+}
+
+.dark .btn-close {
+  filter: invert(1);
+}

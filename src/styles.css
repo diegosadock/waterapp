@@ -1,130 +1,173 @@
-body {
-  background-color: #e3f2fd;
-  font-family: 'Segoe UI', sans-serif;
-  padding-bottom: 40px;
+/* Fundo degradê estilo fundo do oceano escuro */
+.bg-gradient {
+  background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+  min-height: 100vh;
+  color: #e0e7ff; /* texto claro para contraste */
 }
 
-button {
-  font-size: 16px;
+
+
+/* Container bolhas */
+.bolhas-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
 }
 
-.btn-group.flex-wrap {
-  justify-content: center;
-  flex-wrap: wrap;
+/* Bolhas visíveis e com brilho suave no fundo escuro */
+.bolha {
+  position: absolute;
+  bottom: -100px;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.7), rgba(173, 216, 230, 0.5));
+  border-radius: 50%;
+  animation: subir 10s linear infinite;
+  opacity: 0.85;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 10px rgba(173, 216, 230, 0.7);
+  backdrop-filter: blur(1.5px);
 }
 
-.footer-btns {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-  margin-top: 20px;
+
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(13, 110, 253, 0.9);
+  }
 }
 
-body.dark {
-  background-color: #121212;
-  color: #f0f0f0;
+.piscar {
+  animation: piscarAlerta 1s infinite;
 }
 
-.dark .bg-light {
-  background-color: #1e1e1e !important;
-  color: #f0f0f0;
+@keyframes piscarAlerta {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
 }
 
-.dark .btn-primary {
-  background-color: #1976d2;
-  border-color: #1976d2;
+
+
+.bolha::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6), transparent);
 }
 
-.dark .form-control {
-  background-color: #2a2a2a;
-  color: #f0f0f0;
-  border: 1px solid #444;
+/* Animação bolha subindo */
+@keyframes subir {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-120vh) scale(1.2);
+    opacity: 0;
+  }
 }
 
-/* Estilo para botões secundários no modo escuro */
-.dark .btn-secondary {
-  background-color: #424242;
-  border-color: #555;
-  color: #fff;
+/* Header fixo topo */
+header {
+  user-select: none;
+  background-color: #1b324a; /* tom escuro azul para o header */
+  color: #e0e7ff;
+  z-index: 1050;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
 }
 
-/* Estilo para inputs com borda clara no dark */
-.dark input[type="number"],
-.dark input[type="text"],
-.dark select,
-.dark textarea {
-  background-color: #2a2a2a;
-  color: #f0f0f0;
-  border: 1px solid #444;
+/* Botões adicionados e removidos - cores para tema escuro */
+button.btn-outline-primary {
+  color: #9ac4ff;
+  border-color: #9ac4ff;
+  background-color: transparent;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+button.btn-outline-primary:hover {
+  background-color: #9ac4ff;
+  color: #0b1e40;
+  transform: scale(1.05);
 }
 
-/* Placeholder nos campos no modo escuro */
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #bbb;
+button.btn-outline-danger {
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+  background-color: transparent;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+button.btn-outline-danger:hover {
+  background-color: #ff6b6b;
+  color: #3b0b0b;
+  transform: scale(1.05);
 }
 
-/* Labels no modo escuro */
-.dark label {
-  color: #f0f0f0;
+/* Botão flutuante + */
+button.btn-primary.rounded-circle {
+  background-color: #0d6efd;
+  box-shadow: 0 0 10px #0d6efd;
+  border: none;
+  color: white;
+  font-weight: 700;
+  transition: box-shadow 0.3s ease;
+  z-index: 1030;
+}
+button.btn-primary.rounded-circle:hover {
+  box-shadow: 0 0 20px #4096ff;
 }
 
-/* Cards (se usar) */
-.dark .card {
-  background-color: #1e1e1e;
-  border-color: #444;
+/* Textos e informações extras */
+.info-extras p {
+  font-size: 14px;
+  margin: 0.25rem 0;
+  color: #d1d9ff;
 }
 
-/* Bordas de containers gerais */
-.dark .container,
-.dark .container-fluid {
-  border-color: #444;
+/* Modais - cabecalho colorido para tema escuro */
+.modal-header.bg-primary {
+  background-color: #0d47a1;
+  color: white;
+}
+.modal-header.bg-secondary {
+  background-color: #455a64;
+  color: white;
+}
+.modal-header.bg-info {
+  background-color: #0288d1;
+  color: white;
 }
 
-/* Bordas para botões outline */
-.dark .btn-outline-primary {
-  color: #90caf9;
-  border-color: #90caf9;
+/* Progress bar estilo para o tema escuro */
+.progress-bar {
+  background-color: #0d6efd;
 }
 
-.dark .btn-outline-primary:hover {
-  background-color: #1976d2;
-  color: #fff;
-}
-
-/* Tabela, se houver */
-.dark table {
-  background-color: #1e1e1e;
-  color: #f0f0f0;
-}
-
-.dark th,
-.dark td {
-  border-color: #444;
-}
-
-/* Scrollbar estilizada no dark */
-.dark ::-webkit-scrollbar {
+/* Scrollbar dark (opcional) */
+body::-webkit-scrollbar {
   width: 8px;
 }
-
-.dark ::-webkit-scrollbar-thumb {
-  background-color: #444;
-  border-radius: 4px;
+body::-webkit-scrollbar-track {
+  background: #1c2a3a;
+}
+body::-webkit-scrollbar-thumb {
+  background-color: #0d6efd;
+  border-radius: 10px;
 }
 
-.dark ::-webkit-scrollbar-track {
-  background-color: #1e1e1e;
-}
-
-.dark .table-striped > tbody > tr:nth-of-type(odd) > * {
-  --bs-table-striped-bg: #2c2c2c; /* Cor alternada mais clara */
-  --bs-table-striped-color: #f0f0f0; /* Texto claro */
-}
-
-/* Opcional: cor padrão da tabela */
-.dark table {
-  background-color: #1e1e1e;
-  color: #f0f0f0;
+/* Ajustes para textos em geral no tema escuro */
+body, .dark {
+  background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+  color: #e0e7ff;
 }

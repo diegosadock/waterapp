@@ -1,0 +1,270 @@
+<div *ngIf="!carregandoDados" [ngClass]="{'dark': temaEscuro}"
+  class="min-vh-100 d-flex flex-column justify-content-between bg-gradient text-light">
+
+  <div *ngIf="mostrarBolhas" class="bolhas-container" aria-hidden="true">
+    <div class="bolha" *ngFor="let b of bolhas" [ngStyle]="{
+      left: b.left + '%',
+      width: b.size + 'px',
+      height: b.size + 'px',
+      animationDuration: b.duration + 's',
+      animationDelay: b.delay + 's',
+      opacity: b.opacity
+    }"></div>
+  </div>
+
+  <!-- HEADER com botão hamburguer offcanvas -->
+  <header class="d-flex align-items-center justify-content-between p-3 bg-dark text-white shadow-sm fixed-top"
+    style="z-index: 1050;">
+    <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuOffcanvas"
+      aria-controls="menuOffcanvas" aria-label="Abrir menu">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-list"
+        viewBox="0 0 16 16">
+        <path fill-rule="evenodd"
+          d="M2.5 12.5a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-11zm0-4a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-11zm0-4a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-11z" />
+      </svg>
+    </button>
+    <h1 class="h4 mb-0">Water Reminder 💧</h1>
+    <div style="width: 36px;">
+      <button
+        class="list-group-item list-group-item-action d-flex align-items-center gap-2 bg-dark text-warning border-0"
+        (click)="toggleTema()" data-bs-dismiss="offcanvas">
+        {{ temaEscuro ? '🌞' : '🌙' }}
+      </button>
+    </div>
+  </header>
+
+  <!-- Offcanvas Bootstrap: Sidebar -->
+  <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="menuOffcanvas"
+    aria-labelledby="menuOffcanvasLabel">
+    <div class="offcanvas-header bg-secondary text-white">
+      <h5 class="offcanvas-title" id="menuOffcanvasLabel">Menu</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
+        aria-label="Fechar menu"></button>
+    </div>
+    <div class="offcanvas-body p-3">
+      <div class="list-group">
+        <button *ngIf="notificacaoAtiva"
+          class="list-group-item list-group-item-action bg-dark text-warning d-flex align-items-center gap-2"
+          (click)="cancelarLembretes()" data-bs-dismiss="offcanvas">
+          🔕 Parar Lembretes
+        </button>
+        <button *ngIf="!notificacaoAtiva"
+          class="list-group-item list-group-item-action bg-dark text-success d-flex align-items-center gap-2"
+          (click)="reativarLembretes()" data-bs-dismiss="offcanvas">
+          🔔 Ativar Lembretes
+        </button>
+        <button class="list-group-item list-group-item-action bg-dark text-info d-flex align-items-center gap-2"
+          (click)="abrirModalSettings()" data-bs-dismiss="offcanvas">
+          ⚙️ Configurações
+        </button>
+        <button class="list-group-item list-group-item-action bg-dark text-info d-flex align-items-center gap-2"
+          (click)="abrirModalEstatisticas()" data-bs-dismiss="offcanvas">
+          📊 Estatísticas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-grow-1 d-flex flex-column align-items-center justify-content-center px-4 py-5"
+    style="padding-top: 56px;">
+
+    <!-- Progress Circular -->
+    <div class="position-relative" style="width: 200px; height: 200px;">
+      <svg class="progress-circle" width="200" height="200" viewBox="0 0 100 100" role="img"
+        aria-label="Progresso da hidratação">
+        <circle cx="50" cy="50" r="48" stroke="#444" stroke-width="4" fill="none"></circle>
+        <circle class="progress-animated" cx="50" cy="50" r="48" stroke="#0d6efd" stroke-width="4" fill="none"
+          stroke-linecap="round" stroke-dasharray="301.59"
+          [attr.stroke-dashoffset]="301.59 - (301.59 * porcentagem / 100)" transform="rotate(-90 50 50)"
+          style="transition: stroke-dashoffset 0.6s ease"></circle>
+        <text x="50" y="55" text-anchor="middle" font-size="18" fill="#0d6efd" font-weight="bold">{{ porcentagem |
+          number: '1.0-0' }}%</text>
+        <text x="50" y="75" text-anchor="middle" font-size="12" fill="#ccc">{{ quantidadeBebida }} / {{ metaDiaria }}
+          ml</text>
+      </svg>
+      <div class="gota-agua" *ngIf="animandoProgresso" aria-hidden="true"></div>
+    </div>
+
+   <div 
+  class="progress organic-progress mt-4" 
+  style="position: relative; width: 240px; height: 24px; border-radius: 12px; background: #223344; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); overflow: hidden;"
+>
+  <!-- Barra de progresso da água consumida -->
+  <div 
+    class="progress-bar" 
+    [style.width.%]="(quantidadeBebida / metaDiaria) * 100"
+    attr.aria-valuenow="{{ (quantidadeBebida / metaDiaria) * 100 }}" 
+    aria-valuemin="0" 
+    aria-valuemax="100"
+    style="background: linear-gradient(90deg, #0d6efd 0%, #74ebd5 100%); height: 100%; transition: width 0.6s ease;"
+  ></div>
+
+  <!-- Pomodoro reverso -->
+  <div 
+    [style.width.%]="tempoDesdeUltimoGolePercent"
+    [style.background]="corBarraPomodoro"
+    [ngClass]="{ 'piscar': tempoDesdeUltimoGolePercent >= 100 }"
+    style="position: absolute; top: 0; left: 0; height: 100%; transition: width 1s linear;"
+  ></div>
+
+  <!-- Texto flutuante -->
+  <div 
+    style="position: absolute; width: 100%; top: 0; left: 0; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; font-size: 14px; pointer-events: none;"
+  >
+    {{ tempoRestanteFormatado }}
+  </div>
+</div>
+
+
+
+
+  <!-- Volumes Rápidos -->
+  <div class="d-flex flex-wrap justify-content-center gap-3 mt-4 w-100" style="max-width: 400px;">
+    <ng-container *ngFor="let vol of customVolumes">
+      <button #btnAdd class="btn btn-outline-primary rounded-pill px-3 btn-water"
+        (click)="adicionarAgua(vol); animarGota($event)">
+        +{{ vol }}ml
+      </button>
+      <button class="btn btn-outline-danger rounded-pill px-3" (click)="removerAgua(vol)"
+        [attr.aria-label]="'Remover ' + vol + ' ml de água'" type="button">
+        -{{ vol }}ml
+      </button>
+    </ng-container>
+  </div>
+
+ <div
+  class="info-extras d-flex flex-wrap justify-content-between align-items-center mt-3 w-100"
+  style="
+    max-width: 400px;
+    background: rgba(20, 40, 70, 0.75);
+    border-radius: 12px;
+    padding: 18px 24px;
+    font-family: 'Roboto', sans-serif;
+    color: #eee;
+    box-shadow: 0 0 15px rgba(13, 110, 253, 0.3);
+  "
+>
+  <div style="flex: 1 1 48%; margin-bottom: 10px;">
+    <div style="font-weight: 500; font-size: 14px;">Última vez que bebeu</div>
+    <div style="font-weight: 700; font-size: 16px; color: #3a8bfd;">
+      {{ ultimoGoleFormatado }}
+    </div>
+  </div>
+  <div style="flex: 1 1 48%; margin-bottom: 10px;">
+    <div style="font-weight: 500; font-size: 14px;">Tempo desde o último gole</div>
+    <div style="font-weight: 700; font-size: 16px; color: #3a8bfd;">
+      {{ tempoDesdeUltimoGole }}
+    </div>
+  </div>
+  <div style="flex: 1 1 48%; margin-bottom: 10px;">
+    <div style="font-weight: 500; font-size: 14px;">Goles hoje</div>
+    <div style="font-weight: 700; font-size: 16px; color: #3a8bfd;">
+      {{ registrosDeGoles.length }}
+    </div>
+  </div>
+  <div style="flex: 1 1 48%; margin-bottom: 10px;">
+    <div style="font-weight: 500; font-size: 14px;">Meta diária</div>
+    <div style="font-weight: 700; font-size: 16px; color: #3a8bfd;">
+      {{ (metaDiaria / 1000) | number:'1.2-2' }} litros
+    </div>
+  </div>
+  <div style="flex: 1 1 100%; margin-top: 5px;">
+    <div style="font-weight: 600; text-align: center; font-size: 16px; color: #69a1ff;">
+      Volume restante:
+      <span style="font-weight: 700; color: #d0e4ff;">
+        {{ restante }} ml ({{ (100 - porcentagem) | number:'1.0-0' }}%)
+      </span>
+    </div>
+  </div>
+</div>
+  </main>
+
+  <!-- Botão flutuante centralizado verticalmente -->
+  <button class="btn btn-primary rounded-circle shadow-lg position-fixed"
+    style="top: 82%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; font-size: 32px; z-index: 1030;"
+    (click)="adicionarAgua(customVolumes[0])" aria-label="Adicionar água rápido" type="button">
+    +
+  </button>
+
+  <!-- BOTÕES INVISÍVEIS PARA MODAIS -->
+  <button type="button" style="visibility: hidden;" class="btn btn-primary" data-bs-toggle="modal"
+    data-bs-target="#modalAlerta" id="btnModalAlerta"></button>
+  <button type="button" style="visibility: hidden;" class="btn btn-primary" data-bs-toggle="modal"
+    data-bs-target="#modalSettings" id="btnModalSettings"></button>
+  <button type="button" style="visibility: hidden;" class="btn btn-primary" data-bs-toggle="modal"
+    data-bs-target="#modalEstatisticas" id="btnModalEstatisticas"></button>
+
+  <!-- Modal Alerta -->
+  <div class="modal fade" id="modalAlerta" tabindex="-1" aria-labelledby="modalAlertaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white shadow">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="modalAlertaLabel">Alerta</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body text-center">{{ msgModal }}</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Configurações -->
+  <div class="modal fade" id="modalSettings" tabindex="-1" aria-labelledby="modalSettingsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white shadow">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="modalSettingsLabel">Configurações</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label text-white">Volumes personalizados (ml)</label>
+          <input type="text" class="form-control mb-3 bg-secondary text-white border-0"
+            [value]="customVolumes.join(', ')" (change)="atualizarVolumes($event)" />
+          <label class="form-label text-white">Intervalo entre lembretes (min)</label>
+          <input type="number" class="form-control bg-secondary text-white border-0" [(ngModel)]="intervaloMinutos"
+            name="intervaloMinutos" (ngModelChange)="atualizarIntervalo($event)" />
+          <label class="form-check-label text-white d-block mb-3 mt-3" for="toggleBolhas">
+            <input type="checkbox" class="form-check-input me-2" id="toggleBolhas" [(ngModel)]="mostrarBolhas" />
+            Mostrar bolhas animadas
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" (click)="configurado = false">Reconfigurar Meta</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Estatísticas -->
+  <div class="modal fade" id="modalEstatisticas" tabindex="-1" aria-labelledby="modalEstatisticasLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-white shadow">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title" id="modalEstatisticasLabel">Estatísticas da Semana</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="list-group bg-dark">
+            <li *ngFor="let dia of historico" class="list-group-item bg-secondary text-white">
+              <div class="d-flex justify-content-between">
+                <span>{{ dia.data }}</span>
+                <span>{{ dia.quantidade }} ml</span>
+              </div>
+              <div class="progress mt-1" style="height: 8px;">
+                <div class="progress-bar bg-primary" [style.width.%]="(dia.quantidade / metaDiaria) * 100"></div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
